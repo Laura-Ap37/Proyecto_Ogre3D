@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scene formatVersion="1.1">
+
+  <userData>
+    <property name="gravity" type="vector" data="0 -9.81 0"/>
+  </userData>
+
+  <environment>
+    <colourAmbient r="0.9" g="0.9" b="0.9"/>
+  </environment>
+
+  <nodes>
+    <node name="Player" >
+      <position x="0" y="0" z="1.7" />
+      <camera fov="0.785398163" name="Player" projectionType="perspective" >
+        <clipping far="10000" near="0.01" />
+      </camera>
+
+      <node name="l1n">
+      <light name="l1" type="point">
+       <colourDiffuse r="1" g="1" b="1"/>
+       <colourSpecular r="1" g="0" b="0"/>
+      </light>
+      </node>
+
+      <userData>
+        <property name="mass"       type="float" data="70"/>
+        <property name="radius"     type="float" data="0.3"/>
+        <property name="height"     type="float" data="1.7"/>
+        <property name="eye_height" type="float" data="1.6"/>
+        <property name="walk_speed" type="float" data="3"/>
+      </userData>
+    </node>
+
+    <node name="Ground">
+      <plane
+          name="GroundPlane" distance="0" width="42" height="42"
+          xSegments="21" ySegments="21" numTexCoordSets="1"
+          uTile="21" vTile="21" hasNormals="true" material="Ground"
+          >
+        <normal x="0" y="1" z="0"/>
+        <upVector x="0" y="0" z="-1"/>
+      </plane>
+      <userData>
+        <property name="mass" type="float" data="0"/>
+      </userData>
+    </node>
+
+    <node name="Ceiling">
+      <position x="0" y="3" z="0"/>
+      <plane
+          name="CeilingPlane" distance="0" width="42" height="42"
+          xSegments="21" ySegments="21" numTexCoordSets="1"
+          uTile="21" vTile="21" hasNormals="true" material="Ceiling"
+          >
+        <normal x="0" y="-1" z="0"/>
+        <upVector x="0" y="0" z="1"/>
+      </plane>
+      <userData>
+        <property name="mass" type="float" data="0"/>
+      </userData>
+    </node>
+
+  </nodes>
+</scene>
+
