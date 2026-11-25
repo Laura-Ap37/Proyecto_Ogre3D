@@ -165,7 +165,7 @@ _initSceneManager( )
 
   auto* root = this->getRoot( );
   auto mgr = root->createSceneManager( "DefaultSceneManager", "scnMgr" );
-  mgr->setAmbientLight( Ogre::ColourValue( 0.9, 0.9, 0.9 ) );
+  mgr->setAmbientLight( Ogre::ColourValue( 0.035, 0.04, 0.065 ) );
 
   // register our scene with the RTSS
   auto* shadergen = Ogre::RTShader::ShaderGenerator::getSingletonPtr( );
@@ -189,7 +189,7 @@ _configureCamera( )
 
   this->setWindowGrab( true );
   Ogre::Viewport* vp = this->getRenderWindow( )->addViewport( cam );
-  vp->setBackgroundColour( Ogre::ColourValue( 0.5f, 0.5f, 0.52f ) );
+  vp->setBackgroundColour( Ogre::ColourValue( 0.008f, 0.01f, 0.018f ) );
 }
 
 // -------------------------------------------------------------------------

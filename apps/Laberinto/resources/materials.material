@@ -6,9 +6,9 @@ material Ground
         {
             cull_hardware none
 
-            ambient  1 1 1
-            diffuse  1 1 1
-            specular 0.05 0.35 0.05 32
+            ambient  0.12 0.14 0.2
+            diffuse  0.72 0.76 0.9
+            specular 0.025 0.03 0.05 8
 
             texture_unit
             {
@@ -26,9 +26,9 @@ material Ceiling
         {
             cull_hardware none
 
-            ambient  1 1 1
-            diffuse  1 1 1
-            specular 0.35 0.35 0.35 32
+            ambient  0.035 0.04 0.065
+            diffuse  0.2 0.22 0.3
+            specular 0.01 0.012 0.02 4
 
             texture_unit
             {
@@ -44,9 +44,9 @@ material Wall
     {
         pass
         {
-            ambient  0.6 0.6 0.6
-            diffuse  0.6 0.6 0.6
-            specular 0.05 0.05 0.05 16
+            ambient  0.08 0.09 0.14
+            diffuse  0.48 0.52 0.64
+            specular 0.015 0.018 0.03 8
 
             texture_unit
             {
@@ -62,9 +62,9 @@ material MonsterPlaceholder
     {
         pass
         {
-            ambient  0.45 0.05 0.05
-            diffuse  0.85 0.08 0.08
-            specular 0.2 0.2 0.2 16
+            ambient  0.1 0.015 0.025
+            diffuse  0.62 0.045 0.075
+            specular 0.04 0.015 0.02 6
         }
     }
 }
