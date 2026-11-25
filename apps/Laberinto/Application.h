@@ -9,6 +9,8 @@
 #include "Model.h"
 #include "Maze.h"
 #include "Player.h"
+#include "Enemy.h"
+#include "EnemyPresentation.h"
 
 /**
  */
@@ -52,6 +54,8 @@ protected:
   Model m_Model;
   Maze m_Maze;
   Player m_Player;  
+  Enemy m_Enemy;
+  EnemyPresentation m_EnemyPresentation;
 };
 
 #endif // __SolarSystem__Application__h__

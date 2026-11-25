@@ -131,7 +131,13 @@ void Application::
 frameRendered( const Ogre::FrameEvent& evt )
 {
   this->m_Model.update( evt.timeSinceLastFrame );
-  this->m_Player.update( );   
+  this->m_Player.update( );
+  const Maze::Cell nextCell = this->m_Enemy.update(
+    evt.timeSinceLastFrame,
+    this->m_Player.getFeetPosition( ),
+    this->m_EnemyPresentation.getCurrentCell( )
+    );
+  this->m_EnemyPresentation.update( nextCell, evt.timeSinceLastFrame );
 }
 
 // -------------------------------------------------------------------------
@@ -203,6 +209,14 @@ _loadScene( )
 
   // 2. Física: crea los cuerpos estáticos de todo lo que tenga userData
   this->m_Model.build( root );
+
+  Ogre::SceneNode* enemyNode = mgr->getSceneNode( "MonsterPlaceholder" );
+  Maze::Cell enemySpawn;
+  if( !this->m_Maze.worldToCell( enemyNode->getPosition( ), enemySpawn ) ||
+      !this->m_Maze.isWalkable( enemySpawn ) )
+    throw std::runtime_error( "MonsterPlaceholder must start on a walkable maze cell" );
+  this->m_Enemy.build( this->m_Maze, enemySpawn );
+  this->m_EnemyPresentation.build( enemyNode, this->m_Maze, enemySpawn, 1.8 );
 }
 
 // -------------------------------------------------------------------------

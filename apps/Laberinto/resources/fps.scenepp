@@ -79,6 +79,7 @@
       <userData>
         <property name="mass" type="float" data="0"/>
         <property name="collider" type="string" data="box"/>
+        <property name="physics_enabled" type="bool" data="false"/>
       </userData>
     </node>
 

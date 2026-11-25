@@ -1,6 +1,9 @@
 #include "Maze.h"
 #include <algorithm>
+#include <cmath>
 #include <fstream>
+#include <limits>
+#include <queue>
 
 // -------------------------------------------------------------------------
 bool Maze::
@@ -57,6 +60,162 @@ cellToWorld( int row, int col ) const
     x0 + ( col + 0.5 ) * this->m_CellSize, 0,
     z0 + ( row + 0.5 ) * this->m_CellSize
     ) );
+}
+
+// -------------------------------------------------------------------------
+bool Maze::
+worldToCell( const Ogre::Vector3& position, Cell& cell ) const
+{
+    if( this->rows( ) == 0 || this->cols( ) == 0 )
+      return( false );
+
+    const Ogre::Real x0 = -( this->cols( ) * this->m_CellSize ) / 2;
+    const Ogre::Real z0 = -( this->rows( ) * this->m_CellSize ) / 2;
+    cell.col = int( std::floor( ( position.x - x0 ) / this->m_CellSize ) );
+    cell.row = int( std::floor( ( position.z - z0 ) / this->m_CellSize ) );
+    return( cell.row >= 0 && cell.row < this->rows( ) &&
+            cell.col >= 0 && cell.col < this->cols( ) );
+}
+
+// -------------------------------------------------------------------------
+bool Maze::
+isWalkable( Cell cell ) const
+{
+    return( !this->isWall( cell.row, cell.col ) );
+}
+
+// -------------------------------------------------------------------------
+std::vector< Maze::Cell > Maze::
+getWalkableNeighbors( Cell cell ) const
+{
+    std::vector< Cell > neighbors;
+    const Cell candidates[] =
+    {
+      { cell.row - 1, cell.col }, { cell.row, cell.col - 1 },
+      { cell.row, cell.col + 1 }, { cell.row + 1, cell.col }
+    };
+    for( const Cell& candidate: candidates )
+      if( this->isWalkable( candidate ) )
+        neighbors.push_back( candidate );
+    return( neighbors );
+}
+
+// -------------------------------------------------------------------------
+std::vector< Maze::Cell > Maze::
+getPatrolWaypoints( ) const
+{
+    std::vector< Cell > waypoints;
+    for( int row = 0; row < this->rows( ); ++row )
+      for( int col = 0; col < this->cols( ); ++col )
+      {
+        const Cell cell { row, col };
+        if( this->isWalkable( cell ) &&
+            this->getWalkableNeighbors( cell ).size( ) != 2 )
+          waypoints.push_back( cell );
+      }
+
+    if( waypoints.empty( ) )
+      for( int row = 0; row < this->rows( ); ++row )
+        for( int col = 0; col < this->cols( ); ++col )
+          if( this->isWalkable( { row, col } ) )
+            waypoints.push_back( { row, col } );
+    return( waypoints );
+}
+
+// -------------------------------------------------------------------------
+Maze::Cell Maze::
+getNextCell( Cell current, Cell target, Cell previous ) const
+{
+    if( !this->isWalkable( current ) || !this->isWalkable( target ) ||
+        current == target )
+      return( current );
+
+    std::vector< std::vector< int > > distances(
+      this->rows( ), std::vector< int >( this->cols( ), -1 )
+      );
+    std::queue< Cell > pending;
+    distances[ target.row ][ target.col ] = 0;
+    pending.push( target );
+    while( !pending.empty( ) )
+    {
+      const Cell cell = pending.front( );
+      pending.pop( );
+      for( const Cell& neighbor: this->getWalkableNeighbors( cell ) )
+        if( distances[ neighbor.row ][ neighbor.col ] < 0 )
+        {
+          distances[ neighbor.row ][ neighbor.col ]
+            = distances[ cell.row ][ cell.col ] + 1;
+          pending.push( neighbor );
+        }
+    }
+
+    const auto neighbors = this->getWalkableNeighbors( current );
+    if( neighbors.empty( ) )
+      return( current );
+
+    std::vector< Cell > candidates = neighbors;
+    if( neighbors.size( ) > 1 )
+    {
+      candidates.erase(
+        std::remove( candidates.begin( ), candidates.end( ), previous ),
+        candidates.end( )
+        );
+      if( candidates.empty( ) )
+        candidates = neighbors;
+    }
+
+    int bestDistance = std::numeric_limits< int >::max( );
+    int bestEuclidean = std::numeric_limits< int >::max( );
+    std::vector< Cell > best;
+    for( const Cell& neighbor: candidates )
+    {
+      const int routeDistance = distances[ neighbor.row ][ neighbor.col ];
+      if( routeDistance < 0 )
+        continue;
+      const int rowDelta = neighbor.row - target.row;
+      const int colDelta = neighbor.col - target.col;
+      const int euclideanDistance = rowDelta * rowDelta + colDelta * colDelta;
+      if( routeDistance < bestDistance ||
+          ( routeDistance == bestDistance && euclideanDistance < bestEuclidean ) )
+      {
+        bestDistance = routeDistance;
+        bestEuclidean = euclideanDistance;
+        best.clear( );
+        best.push_back( neighbor );
+      }
+      else if( routeDistance == bestDistance &&
+               euclideanDistance == bestEuclidean )
+        best.push_back( neighbor );
+    }
+    if( best.empty( ) )
+      return( current );
+
+    return( best.front( ) );
+}
+
+// -------------------------------------------------------------------------
+bool Maze::
+hasLineOfSight( Cell from, Cell to ) const
+{
+    if( !this->isWalkable( from ) || !this->isWalkable( to ) )
+      return( false );
+
+    int x = from.col, y = from.row;
+    const int dx = std::abs( to.col - from.col );
+    const int dy = std::abs( to.row - from.row );
+    const int sx = ( from.col < to.col )? 1: -1;
+    const int sy = ( from.row < to.row )? 1: -1;
+    int error = dx - dy;
+
+    while( x != to.col || y != to.row )
+    {
+      const int twiceError = 2 * error;
+      if( twiceError > -dy ) { error -= dy; x += sx; }
+      if( twiceError < dx )  { error += dx; y += sy; }
+      if( ( x != to.col || y != to.row ) && this->isWall( y, x ) )
+        return( false );
+    }
+    return( true );
 }
 
 // -------------------------------------------------------------------------

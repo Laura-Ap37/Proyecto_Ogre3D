@@ -9,6 +9,8 @@ include_directories(
 add_executable(
   pujOgre_Laberinto
   Application.cxx
+  Enemy.cxx
+  EnemyPresentation.cxx
   Maze.cxx
   Model.cxx
   Player.cxx
