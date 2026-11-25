@@ -11,6 +11,9 @@
 #include "Player.h"
 #include "Enemy.h"
 #include "EnemyPresentation.h"
+#include "Throwable.h"
+#include "ThrowablePresentation.h"
+#include "CooldownHud.h"
 
 /**
  */
@@ -56,6 +59,9 @@ protected:
   Player m_Player;  
   Enemy m_Enemy;
   EnemyPresentation m_EnemyPresentation;
+  Throwable m_Throwable;
+  ThrowablePresentation m_ThrowablePresentation;
+  CooldownHud m_CooldownHud;
 };
 
 #endif // __SolarSystem__Application__h__

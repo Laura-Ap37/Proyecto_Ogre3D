@@ -10,9 +10,10 @@ public:
     Ogre::SceneNode* node, const Maze& maze, Maze::Cell spawn,
     Ogre::Real speed
     );
-  void update( Maze::Cell destination, Ogre::Real dt );
+  void update( Maze::Cell destination, Ogre::Real dt, bool paused = false );
 
   Maze::Cell getCurrentCell( ) const { return( this->m_CurrentCell ); }
+  Ogre::Vector3 getWorldPosition( ) const;
 
 protected:
   Ogre::SceneNode* m_Node { nullptr };

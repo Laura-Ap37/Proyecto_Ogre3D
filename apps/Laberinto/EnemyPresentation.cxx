@@ -17,9 +17,12 @@ build(
 
 // -------------------------------------------------------------------------
 void EnemyPresentation::
-update( Maze::Cell destination, Ogre::Real dt )
+update( Maze::Cell destination, Ogre::Real dt, bool paused )
 {
   if( this->m_Node == nullptr || this->m_Maze == nullptr )
+    return;
+
+  if( paused )
     return;
 
   if( destination != this->m_CurrentCell )
@@ -49,5 +52,16 @@ update( Maze::Cell destination, Ogre::Real dt )
   this->m_Node->setPosition( position );
   this->m_Node->setOrientation(
     Ogre::Vector3::NEGATIVE_UNIT_Z.getRotationTo( direction )
+    );
+}
+
+// -------------------------------------------------------------------------
+Ogre::Vector3 EnemyPresentation::
+getWorldPosition( ) const
+{
+  return(
+    this->m_Node != nullptr
+    ? this->m_Node->_getDerivedPosition( )
+    : Ogre::Vector3::ZERO
     );
 }

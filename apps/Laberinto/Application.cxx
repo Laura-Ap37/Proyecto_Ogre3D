@@ -10,9 +10,40 @@
 #include <stdexcept>
 
 #include <Ogre.h>
+#include <OgreOverlaySystem.h>
 
 // -------------------------------------------------------------------------
 namespace fs = std::filesystem;
+
+// -------------------------------------------------------------------------
+static Ogre::Real readSceneReal(
+  const Ogre::UserObjectBindings& bindings, const Ogre::String& name,
+  Ogre::Real fallback
+  )
+{
+  const Ogre::Any& value = bindings.getUserAny( name );
+  if( const Ogre::Real* real = Ogre::any_cast< Ogre::Real >( &value ) )
+    return( *real );
+  return( fallback );
+}
+
+// -------------------------------------------------------------------------
+static Ogre::Vector3 readSceneVector(
+  const Ogre::UserObjectBindings& bindings, const Ogre::String& name,
+  const Ogre::Vector3& fallback
+  )
+{
+  const Ogre::Any& value = bindings.getUserAny( name );
+  const Ogre::String* text = Ogre::any_cast< Ogre::String >( &value );
+  if( text == nullptr )
+    return( fallback );
+
+  Ogre::Vector3 result;
+  std::istringstream input( *text );
+  if( !( input >> result.x >> result.y >> result.z ) )
+    throw std::runtime_error( "Invalid scene vector property: " + name );
+  return( result );
+}
 
 // -------------------------------------------------------------------------
 Application::
@@ -28,6 +59,7 @@ Application( int& ac, char** av )
 Application::
 ~Application( )
 {
+  this->m_CooldownHud.destroy( );
 }
 
 // -------------------------------------------------------------------------
@@ -137,7 +169,58 @@ frameRendered( const Ogre::FrameEvent& evt )
     this->m_Player.getFeetPosition( ),
     this->m_EnemyPresentation.getCurrentCell( )
     );
-  this->m_EnemyPresentation.update( nextCell, evt.timeSinceLastFrame );
+  this->m_EnemyPresentation.update(
+    nextCell, evt.timeSinceLastFrame,
+    this->m_Enemy.getState( ) == Enemy::State::STUNNED
+    );
+
+  if( this->m_Player.consumeThrowableRequest( ) )
+  {
+    const Ogre::Vector3 direction = this->m_Player.getLookDirection( );
+    this->m_Throwable.throwFrom(
+      this->m_Player.getEyePosition( ) + direction * Ogre::Real( 0.7 ),
+      direction
+      );
+  }
+
+  const bool wasInFlight
+    = this->m_Throwable.getState( ) == Throwable::State::IN_FLIGHT;
+  const Ogre::Vector3 previousPosition = this->m_Throwable.getPosition( );
+  this->m_Throwable.update( evt.timeSinceLastFrame );
+
+  if( wasInFlight )
+  {
+    const Ogre::Vector3 currentPosition = this->m_Throwable.getPosition( );
+    const Ogre::Vector3 enemyPosition
+      = this->m_EnemyPresentation.getWorldPosition( );
+    const Ogre::Vector3 closestPoint = this->m_Throwable.closestPointTo( enemyPosition );
+    Maze::Cell throwableCell, enemyCell;
+    const bool clearPath
+      = this->m_Maze.worldToCell( closestPoint, throwableCell ) &&
+        this->m_Maze.worldToCell( enemyPosition, enemyCell ) &&
+        this->m_Maze.hasLineOfSight( throwableCell, enemyCell );
+    if( clearPath &&
+        this->m_Throwable.intersects(
+          enemyPosition, this->m_Enemy.getStunRadius( )
+          ) )
+    {
+      this->m_Enemy.stun( );
+      this->m_Throwable.deactivate( );
+    }
+    else if( this->m_Maze.blocksProjectile(
+               previousPosition, currentPosition, this->m_Throwable.getRadius( )
+               ) )
+      this->m_Throwable.deactivate( );
+  }
+
+  this->m_ThrowablePresentation.update(
+    this->m_Throwable, this->m_Player.getEyePosition( ),
+    this->m_Player.getLookDirection( )
+    );
+  this->m_CooldownHud.update(
+    this->m_Throwable.getCooldownRemaining( ),
+    this->m_Throwable.getCooldownDuration( )
+    );
 }
 
 // -------------------------------------------------------------------------
@@ -165,6 +248,7 @@ _initSceneManager( )
 
   auto* root = this->getRoot( );
   auto mgr = root->createSceneManager( "DefaultSceneManager", "scnMgr" );
+  mgr->addRenderQueueListener( this->getOverlaySystem( ) );
   mgr->setAmbientLight( Ogre::ColourValue( 0.9, 0.9, 0.9 ) );
 
   // register our scene with the RTSS
@@ -215,8 +299,30 @@ _loadScene( )
   if( !this->m_Maze.worldToCell( enemyNode->getPosition( ), enemySpawn ) ||
       !this->m_Maze.isWalkable( enemySpawn ) )
     throw std::runtime_error( "MonsterPlaceholder must start on a walkable maze cell" );
-  this->m_Enemy.build( this->m_Maze, enemySpawn );
   this->m_EnemyPresentation.build( enemyNode, this->m_Maze, enemySpawn, 1.8 );
+
+  Ogre::SceneNode* throwableNode = mgr->getSceneNode( "ThrowablePlaceholder" );
+  const Ogre::UserObjectBindings& enemyData = enemyNode->getUserObjectBindings( );
+  this->m_Enemy.build(
+    this->m_Maze, enemySpawn,
+    readSceneReal( enemyData, "stun_duration", 30 ),
+    readSceneReal( enemyData, "stun_radius", 1.5 )
+    );
+  const Ogre::UserObjectBindings& throwableData
+    = throwableNode->getUserObjectBindings( );
+  this->m_Throwable.build( this->m_Model.getBtWorld( ) );
+  const Ogre::Vector3 gravity = readSceneVector(
+    root->getUserObjectBindings( ), "gravity", Ogre::Vector3( 0, -9.81, 0 )
+    );
+  this->m_Throwable.configure(
+    readSceneReal( throwableData, "launch_speed", 12 ),
+    readSceneReal( throwableData, "lifetime", 5 ),
+    readSceneReal( throwableData, "collision_radius", 0.15 ),
+    readSceneReal( throwableData, "cooldown", 60 ),
+    gravity
+    );
+  this->m_ThrowablePresentation.build( throwableNode, this->m_Throwable );
+  this->m_CooldownHud.build( );
 }
 
 // -------------------------------------------------------------------------

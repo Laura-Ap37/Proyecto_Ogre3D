@@ -80,6 +80,27 @@
         <property name="mass" type="float" data="0"/>
         <property name="collider" type="string" data="box"/>
         <property name="physics_enabled" type="bool" data="false"/>
+        <property name="stun_duration" type="float" data="30"/>
+        <property name="stun_radius" type="float" data="1.5"/>
+      </userData>
+    </node>
+
+    <node name="ThrowablePlaceholder">
+      <position x="0" y="1.25" z="0.8"/>
+      <scale x="0.22" y="0.22" z="0.22"/>
+      <parametricSurface name="ThrowablePlaceholder" type="ellipsoid"
+                         material="ThrowablePlaceholder" uResolution="16" vResolution="12"
+                         castShadows="true" visible="false">
+        <param name="xRadius" value="0.5"/>
+        <param name="yRadius" value="0.5"/>
+        <param name="zRadius" value="0.5"/>
+      </parametricSurface>
+      <userData>
+        <property name="physics_enabled" type="bool" data="false"/>
+        <property name="launch_speed" type="float" data="12"/>
+        <property name="lifetime" type="float" data="5"/>
+        <property name="collision_radius" type="float" data="0.15"/>
+        <property name="cooldown" type="float" data="60"/>
       </userData>
     </node>
 

@@ -112,6 +112,13 @@ getFeetPosition( ) const
 
 // -------------------------------------------------------------------------
 Ogre::Vector3 Player::
+getEyePosition( ) const
+{
+  return( this->m_Node != nullptr? this->m_Node->_getDerivedPosition( ): Ogre::Vector3::ZERO );
+}
+
+// -------------------------------------------------------------------------
+Ogre::Vector3 Player::
 getLookDirection( ) const
 {
   return( this->m_Node->getOrientation( ) * Ogre::Vector3::NEGATIVE_UNIT_Z );
@@ -119,8 +126,22 @@ getLookDirection( ) const
 
 // -------------------------------------------------------------------------
 bool Player::
+consumeThrowableRequest( )
+{
+  const bool requested = this->m_ThrowableRequested;
+  this->m_ThrowableRequested = false;
+  return( requested );
+}
+
+// -------------------------------------------------------------------------
+bool Player::
 keyPressed( const OgreBites::KeyboardEvent& evt )
 {
+  if( evt.keysym.sym == 'q' )
+  {
+    this->m_ThrowableRequested = true;
+    return( true );
+  }
   return( this->_setKey( evt.keysym.sym, true ) );
 }
 
@@ -129,6 +150,18 @@ bool Player::
 keyReleased( const OgreBites::KeyboardEvent& evt )
 {
   return( this->_setKey( evt.keysym.sym, false ) );
+}
+
+// -------------------------------------------------------------------------
+bool Player::
+mousePressed( const OgreBites::MouseButtonEvent& evt )
+{
+  if( evt.button == OgreBites::BUTTON_LEFT )
+  {
+    this->m_ThrowableRequested = true;
+    return( true );
+  }
+  return( false );
 }
 
 // -------------------------------------------------------------------------

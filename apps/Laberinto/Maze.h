@@ -43,6 +43,9 @@ public:
   std::vector< Cell > getPatrolWaypoints( ) const;
   Cell getNextCell( Cell current, Cell target, Cell previous ) const;
   bool hasLineOfSight( Cell from, Cell to ) const;
+  bool blocksProjectile(
+    const Ogre::Vector3& from, const Ogre::Vector3& to, Ogre::Real radius
+    ) const;
   int rows( ) const { return( int( m_Grid.size( ) ) ); }
   int cols( ) const { return( m_Grid.empty( )? 0: int( m_Grid[ 0 ].size( ) ) ); }
 

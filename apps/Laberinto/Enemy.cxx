@@ -5,7 +5,10 @@
 
 // -------------------------------------------------------------------------
 void Enemy::
-build( const Maze& maze, Maze::Cell spawn )
+build(
+  const Maze& maze, Maze::Cell spawn, Ogre::Real stunDuration,
+  Ogre::Real stunRadius
+  )
 {
   this->m_Maze = &maze;
   this->m_Waypoints = maze.getPatrolWaypoints( );
@@ -16,6 +19,10 @@ build( const Maze& maze, Maze::Cell spawn )
   this->m_LastCell = spawn;
   this->m_PatrolIndex = 0;
   this->m_SearchTimer = 0;
+  this->m_StunDuration = std::max( Ogre::Real( 0 ), stunDuration );
+  this->m_StunRadius = std::max( Ogre::Real( 0 ), stunRadius );
+  this->m_StunTimer = 0;
+  this->m_ResumeState = State::PATROL;
   this->m_HasCurrentCell = true;
   this->m_Investigating = false;
 
@@ -52,6 +59,14 @@ update(
     this->m_LastCell = currentCell;
     this->m_PreviousCell = currentCell;
     this->m_HasCurrentCell = true;
+  }
+
+  if( this->m_State == State::STUNNED )
+  {
+    this->m_StunTimer -= std::max( Ogre::Real( 0 ), dt );
+    if( this->m_StunTimer > 0 )
+      return( currentCell );
+    this->m_State = this->m_ResumeState;
   }
 
   Maze::Cell playerCell;
@@ -118,6 +133,25 @@ update(
   return( this->m_Maze->getNextCell(
     currentCell, this->m_TargetCell, this->m_PreviousCell
     ) );
+}
+
+// -------------------------------------------------------------------------
+void Enemy::
+stun( )
+{
+  if( this->m_State == State::STUNNED )
+    return;
+
+  this->m_ResumeState
+    = ( this->m_State == State::CHASE )? State::SEARCH: this->m_State;
+  if( this->m_ResumeState == State::SEARCH && this->m_State == State::CHASE )
+  {
+    this->m_TargetCell = this->m_LastKnownPlayerCell;
+    this->m_SearchTimer = this->m_SearchDuration;
+    this->m_Investigating = false;
+  }
+  this->m_StunTimer = this->m_StunDuration;
+  this->m_State = State::STUNNED;
 }
 
 // -------------------------------------------------------------------------

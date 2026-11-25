@@ -219,6 +219,39 @@ hasLineOfSight( Cell from, Cell to ) const
 }
 
 // -------------------------------------------------------------------------
+bool Maze::
+blocksProjectile(
+  const Ogre::Vector3& from, const Ogre::Vector3& to, Ogre::Real radius
+  ) const
+{
+  const Ogre::Vector3 segment = to - from;
+  const Ogre::Real length = segment.length( );
+  const Ogre::Real spacing = std::max( Ogre::Real( 0.1 ), this->m_CellSize / 8 );
+  const int samples = std::max( 1, int( std::ceil( length / spacing ) ) );
+  const Ogre::Real safeRadius = std::max( Ogre::Real( 0 ), radius );
+
+  for( int i = 1; i <= samples; ++i )
+  {
+    const Ogre::Vector3 point = from + segment * ( Ogre::Real( i ) / samples );
+    if( point.y - safeRadius <= 0 ||
+        point.y + safeRadius >= this->m_WallHeight )
+      return( true );
+
+    const Ogre::Real offsets[] = { -safeRadius, 0, safeRadius };
+    for( Ogre::Real dx: offsets )
+      for( Ogre::Real dz: offsets )
+      {
+        Cell cell;
+        if( !this->worldToCell(
+              point + Ogre::Vector3( dx, 0, dz ), cell
+              ) || !this->isWalkable( cell ) )
+          return( true );
+      }
+  }
+  return( false );
+}
+
+// -------------------------------------------------------------------------
 void Maze::
 build( Ogre::SceneManager* mgr, Ogre::SceneNode* parent )
 {

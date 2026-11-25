@@ -9,11 +9,14 @@ include_directories(
 add_executable(
   pujOgre_Laberinto
   Application.cxx
+  CooldownHud.cxx
   Enemy.cxx
   EnemyPresentation.cxx
   Maze.cxx
   Model.cxx
   Player.cxx
+  Throwable.cxx
+  ThrowablePresentation.cxx
   main.cxx
   )
 target_link_libraries(
