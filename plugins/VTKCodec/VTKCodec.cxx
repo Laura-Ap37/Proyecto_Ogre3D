@@ -11,6 +11,9 @@
 #include <pujOgre/vtkPolyData2OgreMesh.h>
 #include <plugins/VTKCodec/Export.h>
 
+#include <chrono>
+#include <filesystem>
+#include <fstream>
 #include <vector>
 
 #include <OgrePlugin.h>
@@ -25,8 +28,11 @@
 #include <vtkXMLPolyDataReader.h>
 #include <vtkPolyDataReader.h>
 #include <vtkOBJReader.h>
-#include <vtkMemoryResourceStream.h>
 #include <vtkTextureMapToSphere.h>
+#include <vtkVersionMacros.h>
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK( 9, 4, 0 )
+#include <vtkMemoryResourceStream.h>
+#endif
 
 namespace
 {
@@ -66,9 +72,48 @@ namespace
       if( this->m_Type == "obj" )
       {
         auto reader = vtkSmartPointer< vtkOBJReader >::New( );
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK( 9, 4, 0 )
         auto stream = vtkSmartPointer< vtkMemoryResourceStream >::New( );
         stream->SetBuffer( data.data( ), data.size( ), true );
         reader->SetStream( stream );
+#else
+        // VTK 9.1 reads OBJ only from a filename.
+        const auto tmp =
+          std::filesystem::temp_directory_path( ) /
+          (
+            "pujogre-"
+            +
+            std::to_string(
+              std::chrono::steady_clock::now( ).time_since_epoch( ).count( )
+              )
+            +
+            ".obj"
+            );
+        {
+          std::ofstream out(
+            tmp, std::ios::binary | std::ios::out | std::ios::noreplace
+            );
+          out.write(
+            data.data( ), static_cast< std::streamsize >( data.size( ) )
+            );
+          if( !out )
+            OGRE_EXCEPT(
+              Ogre::Exception::ERR_CANNOT_WRITE_TO_FILE,
+              "Could not write a temporary OBJ for '" + input->getName( ) + "'",
+              "pujOgreVTKCodec::decode"
+              );
+        }
+        struct TmpFile
+        {
+          std::filesystem::path Path;
+          ~TmpFile( )
+            {
+              std::error_code ec;
+              std::filesystem::remove( this->Path, ec );
+            }
+        } tmpFile{ tmp };
+        reader->SetFileName( tmp.string( ).c_str( ) );
+#endif
         reader->Update( );
 
         auto textureMap = vtkSmartPointer< vtkTextureMapToSphere >::New( );
