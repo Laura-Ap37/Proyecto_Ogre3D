@@ -7,7 +7,7 @@
 void Enemy::
 build(
   const Maze& maze, Maze::Cell spawn, Ogre::Real stunDuration,
-  Ogre::Real stunRadius
+  Ogre::Real stunRadius, Ogre::Real startDelay
   )
 {
   this->m_Maze = &maze;
@@ -22,6 +22,7 @@ build(
   this->m_StunDuration = std::max( Ogre::Real( 0 ), stunDuration );
   this->m_StunRadius = std::max( Ogre::Real( 0 ), stunRadius );
   this->m_StunTimer = 0;
+  this->m_StartDelayTimer = std::max( Ogre::Real( 0 ), startDelay );
   this->m_ResumeState = State::PATROL;
   this->m_HasCurrentCell = true;
   this->m_Investigating = false;
@@ -49,6 +50,15 @@ update(
   if( this->m_Maze == nullptr || !this->m_Maze->isWalkable( currentCell ) )
     return( currentCell );
 
+  const Ogre::Real safeDt = std::max( Ogre::Real( 0 ), dt );
+
+  // Espera inicial de 30s antes de comenzar a perseguir/moverse
+  if( this->m_StartDelayTimer > 0 )
+  {
+    this->m_StartDelayTimer = std::max( Ogre::Real( 0 ), this->m_StartDelayTimer - safeDt );
+    return( currentCell );
+  }
+
   if( this->m_HasCurrentCell && currentCell != this->m_LastCell )
   {
     this->m_PreviousCell = this->m_LastCell;
@@ -63,7 +73,7 @@ update(
 
   if( this->m_State == State::STUNNED )
   {
-    this->m_StunTimer -= std::max( Ogre::Real( 0 ), dt );
+    this->m_StunTimer -= safeDt;
     if( this->m_StunTimer > 0 )
       return( currentCell );
     this->m_State = this->m_ResumeState;
@@ -112,7 +122,7 @@ update(
     this->m_TargetCell = this->m_LastKnownPlayerCell;
   else
   {
-    this->m_SearchTimer -= std::max( Ogre::Real( 0 ), dt );
+    this->m_SearchTimer -= safeDt;
     if( this->m_SearchTimer <= 0 )
     {
       this->m_State = State::PATROL;
@@ -137,10 +147,16 @@ update(
 
 // -------------------------------------------------------------------------
 void Enemy::
-stun( )
+stun( Ogre::Real duration )
 {
+  const Ogre::Real effectiveDuration
+    = ( duration >= 0 ) ? duration : this->m_StunDuration;
+
   if( this->m_State == State::STUNNED )
+  {
+    this->m_StunTimer = std::max( this->m_StunTimer, effectiveDuration );
     return;
+  }
 
   this->m_ResumeState
     = ( this->m_State == State::CHASE )? State::SEARCH: this->m_State;
@@ -150,7 +166,7 @@ stun( )
     this->m_SearchTimer = this->m_SearchDuration;
     this->m_Investigating = false;
   }
-  this->m_StunTimer = this->m_StunDuration;
+  this->m_StunTimer = effectiveDuration;
   this->m_State = State::STUNNED;
 }
 

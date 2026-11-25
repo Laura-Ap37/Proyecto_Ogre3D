@@ -5,6 +5,7 @@
 #define __SolarSystem__Application__h__
 
 #include <string>
+#include <Ogre.h>
 #include <OgreApplicationContext.h>
 #include "Model.h"
 #include "Maze.h"
@@ -25,6 +26,8 @@ public:
   using Self      = Application;
   using TContext  = OgreBites::ApplicationContext;
   using TListener = OgreBites::InputListener;
+
+  enum class GameState { PLAYING, WON, LOST };
 
 public:
   Application( int& ac, char** av );
@@ -50,13 +53,15 @@ protected:
   void _initSceneManager( );
   void _configureCamera( );
   void _loadScene( );
+  void _setEndMessage( const Ogre::String& text, const Ogre::ColourValue& colour );
   static void _bounds( Ogre::SceneNode* node, Ogre::AxisAlignedBox* box );
 
 protected:
   std::string m_ExecutionDir { "" };
+  GameState m_GameState { GameState::PLAYING };
   Model m_Model;
   Maze m_Maze;
-  Player m_Player;  
+  Player m_Player;
   Enemy m_Enemy;
   EnemyPresentation m_EnemyPresentation;
   Throwable m_Throwable;

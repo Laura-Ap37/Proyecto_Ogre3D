@@ -16,7 +16,11 @@ public:
   Ogre::Vector3 getWorldPosition( ) const;
 
 protected:
+  void _buildVisuals( );
+
+protected:
   Ogre::SceneNode* m_Node { nullptr };
+  Ogre::SceneManager* m_SceneMgr { nullptr };
   const Maze* m_Maze { nullptr };
   Maze::Cell m_CurrentCell;
   Maze::Cell m_Destination;

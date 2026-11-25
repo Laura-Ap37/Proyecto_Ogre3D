@@ -5,12 +5,16 @@
 #include "Application.h"
 
 #include <filesystem>
+#include <iostream>
 #include <queue>
 #include <sstream>
 #include <stdexcept>
 
 #include <Ogre.h>
 #include <OgreOverlaySystem.h>
+#include <OgreOverlayManager.h>
+#include <OgreOverlayContainer.h>
+#include <OgreOverlayElement.h>
 
 // -------------------------------------------------------------------------
 namespace fs = std::filesystem;
@@ -131,37 +135,12 @@ keyPressed( const OgreBites::KeyboardEvent& evt )
 }
 
 // -------------------------------------------------------------------------
-/*bool Application::
-mousePressed( const OgreBites::MouseButtonEvent& evt )
-{
-  if( evt.button == OgreBites::BUTTON_LEFT )
-  {
-    Ogre::Vector3 pos
-      =
-      this->m_CameraMan->getBodyNode( )->_getDerivedPosition( );
-    Ogre::Vector3 dir
-      =
-      this->m_CameraMan->getBodyNode( )->_getDerivedOrientation( )
-      *
-      Ogre::Vector3::NEGATIVE_UNIT_Z;
-
-    // TODO: shoot!
-    Ogre::SceneNode* head = this->m_CameraMan->getHeadNode( );
-    Ogre::Quaternion q = head->_getDerivedOrientation( );
-    dir = q * Ogre::Vector3::NEGATIVE_UNIT_Z;
-    pos = head->_getDerivedPosition( ) + q * Ogre::Vector3( 0, -0.05, -0.45 );
-    this->m_Model.shoot( this->getRoot( )->getSceneManager( "scnMgr" ), pos, dir);
-    
-    return( true );
-  }
-  else
-    return( false );
-}
-*/
-// -------------------------------------------------------------------------
 void Application::
 frameRendered( const Ogre::FrameEvent& evt )
 {
+  if( this->m_GameState != GameState::PLAYING )
+    return;
+
   this->m_Model.update( evt.timeSinceLastFrame );
   this->m_Player.update( );
   const Maze::Cell nextCell = this->m_Enemy.update(
@@ -169,9 +148,11 @@ frameRendered( const Ogre::FrameEvent& evt )
     this->m_Player.getFeetPosition( ),
     this->m_EnemyPresentation.getCurrentCell( )
     );
+  const bool enemyPaused =
+    this->m_Enemy.isWaitingToStart( ) ||
+    this->m_Enemy.getState( ) == Enemy::State::STUNNED;
   this->m_EnemyPresentation.update(
-    nextCell, evt.timeSinceLastFrame,
-    this->m_Enemy.getState( ) == Enemy::State::STUNNED
+    nextCell, evt.timeSinceLastFrame, enemyPaused
     );
 
   if( this->m_Player.consumeThrowableRequest( ) )
@@ -204,7 +185,7 @@ frameRendered( const Ogre::FrameEvent& evt )
           enemyPosition, this->m_Enemy.getStunRadius( )
           ) )
     {
-      this->m_Enemy.stun( );
+      this->m_Enemy.stun( Ogre::Real( 15.0 ) );
       this->m_Throwable.deactivate( );
     }
     else if( this->m_Maze.blocksProjectile(
@@ -221,6 +202,38 @@ frameRendered( const Ogre::FrameEvent& evt )
     this->m_Throwable.getCooldownRemaining( ),
     this->m_Throwable.getCooldownDuration( )
     );
+
+  // COMPROBACIÓN DE DERROTA Y VICTORIA
+  const Ogre::Vector3 playerPos = this->m_Player.getFeetPosition( );
+  const Ogre::Vector3 enemyPos  = this->m_EnemyPresentation.getWorldPosition( );
+  const Ogre::Vector3 exitPos   = this->m_Maze.getExit( );
+
+  // 1. Derrota: el monstruo te alcanza (en plano XZ)
+  const Ogre::Real dxE = playerPos.x - enemyPos.x;
+  const Ogre::Real dzE = playerPos.z - enemyPos.z;
+  const Ogre::Real killRadius = 1.1f;
+
+  if( this->m_Enemy.getState( ) != Enemy::State::STUNNED &&
+      ( dxE * dxE + dzE * dzE ) <= ( killRadius * killRadius ) )
+  {
+    this->m_GameState = GameState::LOST;
+    this->setWindowGrab( false );
+    this->_setEndMessage( "PERDISTE", Ogre::ColourValue( 1.0f, 0.15f, 0.15f ) );
+    return;
+  }
+
+  // 2. Victoria: llegas a la salida 'E' (en plano XZ)
+  const Ogre::Real dxX = playerPos.x - exitPos.x;
+  const Ogre::Real dzX = playerPos.z - exitPos.z;
+  const Ogre::Real winRadius = this->m_Maze.getCellSize( ) * 0.55f;
+
+  if( ( dxX * dxX + dzX * dzX ) <= ( winRadius * winRadius ) )
+  {
+    this->m_GameState = GameState::WON;
+    this->setWindowGrab( false );
+    this->_setEndMessage( "GANASTE", Ogre::ColourValue( 0.15f, 1.0f, 0.35f ) );
+    return;
+  }
 }
 
 // -------------------------------------------------------------------------
@@ -249,7 +262,7 @@ _initSceneManager( )
   auto* root = this->getRoot( );
   auto mgr = root->createSceneManager( "DefaultSceneManager", "scnMgr" );
   mgr->addRenderQueueListener( this->getOverlaySystem( ) );
-  mgr->setAmbientLight( Ogre::ColourValue( 0.9, 0.9, 0.9 ) );
+  mgr->setAmbientLight( Ogre::ColourValue( 0.15f, 0.15f, 0.15f ) );
 
   // register our scene with the RTSS
   auto* shadergen = Ogre::RTShader::ShaderGenerator::getSingletonPtr( );
@@ -295,18 +308,29 @@ _loadScene( )
   this->m_Model.build( root );
 
   Ogre::SceneNode* enemyNode = mgr->getSceneNode( "MonsterPlaceholder" );
+  const Ogre::Vector3 startPos = this->m_Maze.getStart( );
+  Ogre::Vector3 behindPos = startPos + Ogre::Vector3( 0, 0, this->m_Maze.getCellSize( ) * 2.0 );
+
   Maze::Cell enemySpawn;
-  if( !this->m_Maze.worldToCell( enemyNode->getPosition( ), enemySpawn ) ||
+  if( !this->m_Maze.worldToCell( behindPos, enemySpawn ) ||
       !this->m_Maze.isWalkable( enemySpawn ) )
-    throw std::runtime_error( "MonsterPlaceholder must start on a walkable maze cell" );
+  {
+    this->m_Maze.worldToCell( startPos, enemySpawn );
+  }
+
+  const Ogre::Vector3 spawnWorld = this->m_Maze.cellToWorld( enemySpawn );
+  enemyNode->setPosition( spawnWorld.x, enemyNode->getPosition( ).y, spawnWorld.z );
   this->m_EnemyPresentation.build( enemyNode, this->m_Maze, enemySpawn, 1.8 );
+  std::cout << "[Enemy] Spawn cell=(" << enemySpawn.row << "," << enemySpawn.col
+            << ") pos=" << enemyNode->_getDerivedPosition( ) << std::endl;
 
   Ogre::SceneNode* throwableNode = mgr->getSceneNode( "ThrowablePlaceholder" );
   const Ogre::UserObjectBindings& enemyData = enemyNode->getUserObjectBindings( );
   this->m_Enemy.build(
     this->m_Maze, enemySpawn,
-    readSceneReal( enemyData, "stun_duration", 30 ),
-    readSceneReal( enemyData, "stun_radius", 1.5 )
+    Ogre::Real( 15.0 ),
+    readSceneReal( enemyData, "stun_radius", 1.5 ),
+    Ogre::Real( 30.0 )
     );
   const Ogre::UserObjectBindings& throwableData
     = throwableNode->getUserObjectBindings( );
@@ -338,6 +362,53 @@ _bounds( Ogre::SceneNode* node, Ogre::AxisAlignedBox* box )
 
   for( Ogre::Node* child: node->getChildren( ) )
     Self::_bounds( static_cast< Ogre::SceneNode* >( child ), box );
+}
+
+// -------------------------------------------------------------------------
+void Application::_setEndMessage( const Ogre::String& text, const Ogre::ColourValue& colour )
+{
+  auto* overlayMgr = Ogre::OverlayManager::getSingletonPtr( );
+  if( !overlayMgr ) return;
+
+  Ogre::Overlay* overlay = overlayMgr->getByName( "EndBannerOverlay" );
+  if( !overlay )
+  {
+    overlay = overlayMgr->create( "EndBannerOverlay" );
+    overlay->setZOrder( 500 );
+
+    auto* panel = static_cast< Ogre::OverlayContainer* >(
+      overlayMgr->createOverlayElement( "Panel", "EndBannerPanel" )
+      );
+    panel->setMetricsMode( Ogre::GMM_RELATIVE );
+    panel->setPosition( 0.25f, 0.40f );
+    panel->setDimensions( 0.50f, 0.20f );
+    try
+    {
+      panel->setMaterialName( "BaseWhiteNoLighting" );
+    }
+    catch( ... )
+    {
+      // Ignorar si no existe el material en este entorno
+    }
+
+    auto* area = overlayMgr->createOverlayElement( "TextArea", "EndBannerText" );
+    area->setMetricsMode( Ogre::GMM_RELATIVE );
+    area->setPosition( 0.0f, 0.06f );
+    area->setDimensions( 1.0f, 0.10f );
+    area->setParameter( "char_height", "0.08" );
+    area->setParameter( "alignment", "center" );
+    area->setColour( colour );
+
+    panel->addChild( area );
+    overlay->add2D( panel );
+  }
+
+  if( auto* area = overlayMgr->getOverlayElement( "EndBannerText", false ) )
+  {
+    area->setCaption( text );
+    area->setColour( colour );
+  }
+  overlay->show( );
 }
 
 // eof - Application.cxx

@@ -266,7 +266,36 @@ build( Ogre::SceneManager* mgr, Ogre::SceneNode* parent )
       while( c < this->cols( ) && this->isWall( r, c ) ) ++c;
       this->_addWall( mgr, parent, r, c0, c - 1 );
     }
+  }for( int r = 0; r < this->rows( ); ++r )
+  {
+    int c = 0;
+    while( c < this->cols( ) )
+    {
+      if( !this->isWall( r, c ) ) { ++c; continue; }
+      int c0 = c;
+      while( c < this->cols( ) && this->isWall( r, c ) ) ++c;
+      this->_addWall( mgr, parent, r, c0, c - 1 );
+    }
+  }for( int r = 0; r < this->rows( ); ++r )
+  {
+    int c = 0;
+    while( c < this->cols( ) )
+    {
+      if( !this->isWall( r, c ) ) { ++c; continue; }
+      int c0 = c;
+      while( c < this->cols( ) && this->isWall( r, c ) ) ++c;
+      this->_addWall( mgr, parent, r, c0, c - 1 );
+    }
   }
+
+  const Ogre::Vector3 exitPos = this->getExit( );
+  Ogre::SceneNode* exitMarkerNode = parent->createChildSceneNode( );
+  exitMarkerNode->setPosition( exitPos.x, 0.15f, exitPos.z );
+
+  Ogre::Entity* exitMarker = mgr->createEntity( Ogre::SceneManager::PT_CUBE );
+  exitMarker->setMaterialName( "ThrowablePlaceholder" ); // o un material propio verde/brillante
+  exitMarkerNode->setScale( 0.008f, 0.003f, 0.008f ); // cubo de 100 -> ~0.8 x 0.3 x 0.8 m
+  exitMarkerNode->attachObject( exitMarker );
 }
 
 // -------------------------------------------------------------------------
