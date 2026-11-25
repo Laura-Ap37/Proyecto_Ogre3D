@@ -40,6 +40,7 @@ public:
   bool isWall( int row, int col ) const;
   bool isWalkable( Cell cell ) const;
   std::vector< Cell > getWalkableNeighbors( Cell cell ) const;
+  Cell getWalkableNeighborToward( Cell cell, const Ogre::Vector3& direction ) const;
   std::vector< Cell > getPatrolWaypoints( ) const;
   Cell getNextCell( Cell current, Cell target, Cell previous ) const;
   bool hasLineOfSight( Cell from, Cell to ) const;

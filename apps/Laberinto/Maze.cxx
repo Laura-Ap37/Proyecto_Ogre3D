@@ -101,6 +101,34 @@ getWalkableNeighbors( Cell cell ) const
 }
 
 // -------------------------------------------------------------------------
+Maze::Cell Maze::
+getWalkableNeighborToward(
+    Cell cell, const Ogre::Vector3& direction
+    ) const
+{
+    Ogre::Vector3 horizontalDirection( direction.x, 0, direction.z );
+    if( horizontalDirection.squaredLength( ) <= Ogre::Real( 1e-6 ) )
+      return( Cell( ) );
+    horizontalDirection.normalise( );
+
+    const Ogre::Vector3 origin = this->cellToWorld( cell );
+    Cell best;
+    Ogre::Real bestAlignment = -Ogre::Real( 2 );
+    for( const Cell& neighbor: this->getWalkableNeighbors( cell ) )
+    {
+      Ogre::Vector3 offset = this->cellToWorld( neighbor ) - origin;
+      offset.normalise( );
+      const Ogre::Real alignment = horizontalDirection.dotProduct( offset );
+      if( alignment > bestAlignment )
+      {
+        bestAlignment = alignment;
+        best = neighbor;
+      }
+    }
+    return( best );
+}
+
+// -------------------------------------------------------------------------
 std::vector< Maze::Cell > Maze::
 getPatrolWaypoints( ) const
 {

@@ -59,6 +59,7 @@ Application( int& ac, char** av )
 Application::
 ~Application( )
 {
+  this->m_LoseScreen.destroy( );
   this->m_CooldownHud.destroy( );
 }
 
@@ -126,8 +127,44 @@ keyPressed( const OgreBites::KeyboardEvent& evt )
     this->getRoot( )->queueEndRendering( );
     return( true );
   }
+  if( this->m_Game.getState( ) == Game::State::LOST )
+    return( true );
   else
     return( false );
+}
+
+// -------------------------------------------------------------------------
+bool Application::
+keyReleased( const OgreBites::KeyboardEvent& )
+{
+  return( this->m_Game.getState( ) == Game::State::LOST );
+}
+
+// -------------------------------------------------------------------------
+bool Application::
+mousePressed( const OgreBites::MouseButtonEvent& evt )
+{
+  if( this->m_Game.getState( ) != Game::State::LOST )
+    return( false );
+
+  Ogre::RenderWindow* window = this->getRenderWindow( );
+  if( window == nullptr )
+    return( true );
+  const LoseScreen::Action action = this->m_LoseScreen.mousePressed(
+    evt, Ogre::Real( window->getWidth( ) ), Ogre::Real( window->getHeight( ) )
+    );
+  if( action == LoseScreen::Action::REPLAY )
+    this->_restartGame( );
+  else if( action == LoseScreen::Action::EXIT )
+    this->getRoot( )->queueEndRendering( );
+  return( true );
+}
+
+// -------------------------------------------------------------------------
+bool Application::
+mouseMoved( const OgreBites::MouseMotionEvent& )
+{
+  return( this->m_Game.getState( ) == Game::State::LOST );
 }
 
 // -------------------------------------------------------------------------
@@ -162,6 +199,15 @@ mousePressed( const OgreBites::MouseButtonEvent& evt )
 void Application::
 frameRendered( const Ogre::FrameEvent& evt )
 {
+  if( this->m_Game.getState( ) == Game::State::LOST )
+    return;
+
+  if( this->m_EnablePlayerInputNextFrame )
+  {
+    this->m_Player.setInputEnabled( true );
+    this->m_EnablePlayerInputNextFrame = false;
+  }
+
   this->m_Model.update( evt.timeSinceLastFrame );
   this->m_Player.update( );
   const Maze::Cell nextCell = this->m_Enemy.update(
@@ -217,6 +263,20 @@ frameRendered( const Ogre::FrameEvent& evt )
     this->m_Throwable, this->m_Player.getEyePosition( ),
     this->m_Player.getLookDirection( )
     );
+
+  if( this->m_Game.updatePlayerContact(
+        this->m_Player.getFeetPosition( ),
+        this->m_Player.getHeight( ), this->m_Player.getRadius( ),
+        this->m_EnemyPresentation.getWorldBounds( ),
+        this->m_Enemy.getState( ) == Enemy::State::STUNNED
+        ) )
+  {
+    this->m_Player.setInputEnabled( false );
+    this->m_LoseScreen.show( );
+    this->setWindowGrab( false );
+    return;
+  }
+
   this->m_CooldownHud.update(
     this->m_Throwable.getCooldownRemaining( ),
     this->m_Throwable.getCooldownDuration( )
@@ -295,16 +355,28 @@ _loadScene( )
   this->m_Model.build( root );
 
   Ogre::SceneNode* enemyNode = mgr->getSceneNode( "MonsterPlaceholder" );
-  Maze::Cell enemySpawn;
-  if( !this->m_Maze.worldToCell( enemyNode->getPosition( ), enemySpawn ) ||
-      !this->m_Maze.isWalkable( enemySpawn ) )
-    throw std::runtime_error( "MonsterPlaceholder must start on a walkable maze cell" );
-  this->m_EnemyPresentation.build( enemyNode, this->m_Maze, enemySpawn, 1.8 );
+  Ogre::SceneNode* playerNode = mgr->getSceneNode( "Player" );
+  Maze::Cell playerSpawn;
+  if( !this->m_Maze.worldToCell( this->m_Maze.getStart( ), playerSpawn ) )
+    throw std::runtime_error( "Player start must be inside the maze" );
+  const Ogre::Vector3 playerForward
+    = playerNode->_getDerivedOrientation( ) * Ogre::Vector3::NEGATIVE_UNIT_Z;
+  this->m_EnemySpawn = this->m_Maze.getWalkableNeighborToward(
+    playerSpawn, -playerForward
+    );
+  if( !this->m_Maze.isWalkable( this->m_EnemySpawn ) )
+    throw std::runtime_error(
+      "MonsterPlaceholder needs a walkable maze cell behind the player"
+      );
+  Ogre::Vector3 enemyPosition = this->m_Maze.cellToWorld( this->m_EnemySpawn );
+  enemyPosition.y = enemyNode->getPosition( ).y;
+  enemyNode->setPosition( enemyPosition );
+  this->m_EnemyPresentation.build( enemyNode, this->m_Maze, this->m_EnemySpawn, 1.8 );
 
   Ogre::SceneNode* throwableNode = mgr->getSceneNode( "ThrowablePlaceholder" );
   const Ogre::UserObjectBindings& enemyData = enemyNode->getUserObjectBindings( );
   this->m_Enemy.build(
-    this->m_Maze, enemySpawn,
+    this->m_Maze, this->m_EnemySpawn,
     readSceneReal( enemyData, "stun_duration", 30 ),
     readSceneReal( enemyData, "stun_radius", 1.5 )
     );
@@ -323,6 +395,30 @@ _loadScene( )
     );
   this->m_ThrowablePresentation.build( throwableNode, this->m_Throwable );
   this->m_CooldownHud.build( );
+  this->m_LoseScreen.build( );
+}
+
+// -------------------------------------------------------------------------
+void Application::
+_restartGame( )
+{
+  this->m_Game.reset( );
+  this->m_Player.reset( this->m_Maze.getStart( ) );
+  this->m_Enemy.reset( this->m_EnemySpawn );
+  this->m_EnemyPresentation.reset( this->m_EnemySpawn );
+  this->m_Throwable.reset( );
+  this->m_LoseScreen.hide( );
+  this->m_Player.setInputEnabled( false );
+  this->m_EnablePlayerInputNextFrame = true;
+  this->m_ThrowablePresentation.update(
+    this->m_Throwable, this->m_Player.getEyePosition( ),
+    this->m_Player.getLookDirection( )
+    );
+  this->m_CooldownHud.update(
+    this->m_Throwable.getCooldownRemaining( ),
+    this->m_Throwable.getCooldownDuration( )
+    );
+  this->setWindowGrab( true );
 }
 
 // -------------------------------------------------------------------------

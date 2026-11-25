@@ -14,6 +14,7 @@ public:
     const Maze& maze, Maze::Cell spawn, Ogre::Real stunDuration = 30.0,
     Ogre::Real stunRadius = 1.5
     );
+  void reset( Maze::Cell spawn );
   Maze::Cell update(
     Ogre::Real dt, const Ogre::Vector3& playerPosition, Maze::Cell currentCell
     );

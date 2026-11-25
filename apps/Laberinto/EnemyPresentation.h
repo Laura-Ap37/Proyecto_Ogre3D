@@ -11,9 +11,11 @@ public:
     Ogre::Real speed
     );
   void update( Maze::Cell destination, Ogre::Real dt, bool paused = false );
+  void reset( Maze::Cell spawn );
 
   Maze::Cell getCurrentCell( ) const { return( this->m_CurrentCell ); }
   Ogre::Vector3 getWorldPosition( ) const;
+  Ogre::AxisAlignedBox getWorldBounds( ) const;
 
 protected:
   Ogre::SceneNode* m_Node { nullptr };

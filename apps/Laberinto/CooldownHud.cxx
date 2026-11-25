@@ -1,4 +1,5 @@
 #include "CooldownHud.h"
+#include "OverlayMaterial.h"
 #include <algorithm>
 #include <cmath>
 #include <vector>
@@ -93,7 +94,12 @@ build( )
   this->m_BarBackground = this->_createPanel(
     "CooldownBarBackground", kBarLeft, kBarTop, kBarWidth, kBarHeight
     );
-  this->m_BarBackground->setColour( Ogre::ColourValue( 0.16, 0.16, 0.18, 0.85 ) );
+  this->m_BarBackground->setMaterialName(
+    Laberinto::overlayMaterialName(
+      Ogre::ColourValue( 0.16, 0.16, 0.18, 0.85 )
+      )
+    );
+  this->m_BarBackground->setColour( Ogre::ColourValue::White );
   this->m_BarFill = this->_createPanel(
     "CooldownBarFill", kBarLeft, kBarTop, kBarWidth, kBarHeight
     );
@@ -126,13 +132,15 @@ update( Ogre::Real remaining, Ogre::Real duration )
   {
     for( auto& digit: this->m_Digits )
       for( auto* segment: digit )
-        segment->setColour( colour );
+        segment->setMaterialName( Laberinto::overlayMaterialName( colour ) );
   }
 
   const Ogre::Real fraction
     = ( safeDuration > 0 )? safeRemaining / safeDuration: 0;
   this->m_BarFill->setWidth( kBarWidth * fraction );
-  this->m_BarFill->setColour( colour );
+  this->m_BarFill->setMaterialName(
+    Laberinto::overlayMaterialName( colour )
+    );
 }
 
 // -------------------------------------------------------------------------
@@ -177,7 +185,9 @@ _createPanel(
   auto* panel = static_cast< Ogre::PanelOverlayElement* >(
     this->m_Manager->createOverlayElement( "Panel", name )
     );
-  panel->setMaterialName( "BaseWhite" );
+  panel->setMaterialName(
+    Laberinto::overlayMaterialName( Ogre::ColourValue::White )
+    );
   panel->setMetricsMode( Ogre::GMM_RELATIVE );
   panel->setPosition( left, top );
   panel->setDimensions( width, height );
@@ -196,6 +206,8 @@ _setDigit( size_t index, int digit, const Ogre::ColourValue& colour )
     this->m_Digits[ index ][ segment ]->setVisible(
       kDigitSegments[ digit ][ segment ]
       );
-    this->m_Digits[ index ][ segment ]->setColour( colour );
+    this->m_Digits[ index ][ segment ]->setMaterialName(
+      Laberinto::overlayMaterialName( colour )
+      );
   }
 }

@@ -66,16 +66,10 @@
     </node>
 
     <node name="MonsterPlaceholder">
-      <position x="0" y="0.8" z="2"/>
-      <parametricSurface name="MonsterPlaceholder" type="superEllipsoid"
-                         material="MonsterPlaceholder" uResolution="12" vResolution="6"
-                         castShadows="true" visible="true">
-        <param name="xRadius" value="0.8"/>
-        <param name="yRadius" value="0.8"/>
-        <param name="zRadius" value="0.8"/>
-        <param name="n1" value="0.1"/>
-        <param name="n2" value="0.1"/>
-      </parametricSurface>
+      <position x="0" y="1.42" z="2"/>
+      <scale x="0.1" y="0.1" z="0.1"/>
+      <entity name="MonsterPlaceholder" meshFile="bunny.obj"
+              material="MonsterPlaceholder" castShadows="true" visible="true"/>
       <userData>
         <property name="mass" type="float" data="0"/>
         <property name="collider" type="string" data="box"/>

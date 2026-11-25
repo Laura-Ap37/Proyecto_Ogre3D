@@ -41,6 +41,15 @@ build(
 }
 
 // -------------------------------------------------------------------------
+void Enemy::
+reset( Maze::Cell spawn )
+{
+  if( this->m_Maze == nullptr )
+    return;
+  this->build( *this->m_Maze, spawn, this->m_StunDuration, this->m_StunRadius );
+}
+
+// -------------------------------------------------------------------------
 Maze::Cell Enemy::
 update(
   Ogre::Real dt, const Ogre::Vector3& playerPosition, Maze::Cell currentCell

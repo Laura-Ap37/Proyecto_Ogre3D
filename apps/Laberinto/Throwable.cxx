@@ -131,6 +131,18 @@ deactivate( )
 
 // -------------------------------------------------------------------------
 void Throwable::
+reset( )
+{
+  this->_removeBody( );
+  this->m_State = State::IDLE_HELD;
+  this->m_Position = Ogre::Vector3::ZERO;
+  this->m_PreviousPosition = Ogre::Vector3::ZERO;
+  this->m_CooldownRemaining = 0;
+  this->m_Elapsed = 0;
+}
+
+// -------------------------------------------------------------------------
+void Throwable::
 _removeBody( )
 {
   if( this->m_World != nullptr && this->m_Body != nullptr )

@@ -2,8 +2,8 @@
 // @author Leonardo Florez-Valencia (florez-l@javeriana.edu.co)
 // =========================================================================
 
-// Ogre plugin that registers VTK file formats as mesh codecs (Ogre 13+),
-// so that sceneMgr->createEntity("model.vtp") just works.
+// Ogre plugin that registers VTK and Wavefront OBJ files as mesh codecs
+// (Ogre 13+), so sceneMgr->createEntity("model.obj") just works.
 //
 // Load with plugins.cfg:   Plugin=Plugin_VtkCodec
 // or in code:              root->loadPlugin("Plugin_VtkCodec");
@@ -24,6 +24,9 @@
 #include <vtkPolyData.h>
 #include <vtkXMLPolyDataReader.h>
 #include <vtkPolyDataReader.h>
+#include <vtkOBJReader.h>
+#include <vtkMemoryResourceStream.h>
+#include <vtkTextureMapToSphere.h>
 
 namespace
 {
@@ -60,7 +63,21 @@ namespace
       const std::string data = input->getAsString( );
 
       vtkSmartPointer< vtkPolyData > polyData;
-      if( this->m_Type == "vtp" )
+      if( this->m_Type == "obj" )
+      {
+        auto reader = vtkSmartPointer< vtkOBJReader >::New( );
+        auto stream = vtkSmartPointer< vtkMemoryResourceStream >::New( );
+        stream->SetBuffer( data.data( ), data.size( ), true );
+        reader->SetStream( stream );
+        reader->Update( );
+
+        auto textureMap = vtkSmartPointer< vtkTextureMapToSphere >::New( );
+        textureMap->SetInputConnection( reader->GetOutputPort( ) );
+        textureMap->PreventSeamOn( );
+        textureMap->Update( );
+        polyData = vtkPolyData::SafeDownCast( textureMap->GetOutput( ) );
+      }
+      else if( this->m_Type == "vtp" )
       {
         auto reader = vtkSmartPointer< vtkXMLPolyDataReader >::New( );
         reader->ReadFromInputStringOn( );
@@ -112,7 +129,7 @@ namespace
 
     virtual void install( ) override
       {
-        for( const char* ext: { "vtp", "vtk" } )
+        for( const char* ext: { "vtp", "vtk", "obj" } )
         {
           auto* codec = new pujOgreVTKCodec( ext );
           Ogre::Codec::registerCodec( codec );

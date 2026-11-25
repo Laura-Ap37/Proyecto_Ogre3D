@@ -33,6 +33,7 @@ build( btDynamicsWorld* world, Ogre::SceneNode* node, const Ogre::Vector3& feet 
   const Ogre::UserObjectBindings& ud = node->getUserObjectBindings( );
   const Ogre::Real mass   = readReal( ud, "mass", 70 );
   const Ogre::Real radius = readReal( ud, "radius", 0.3 );
+  this->m_Radius = radius;
   this->m_Height    = readReal( ud, "height", 1.7 );
   this->m_EyeHeight = readReal( ud, "eye_height", 1.6 );
   this->m_Speed     = readReal( ud, "walk_speed", 3 );
@@ -111,6 +112,47 @@ getFeetPosition( ) const
 }
 
 // -------------------------------------------------------------------------
+void Player::
+reset( const Ogre::Vector3& feet )
+{
+  if( this->m_Body == nullptr )
+    return;
+
+  btTransform transform;
+  transform.setIdentity( );
+  transform.setOrigin( btVector3(
+    feet.x, feet.y + this->m_Height / 2 + Ogre::Real( 0.02 ), feet.z
+    ) );
+  this->m_Body->setWorldTransform( transform );
+  this->m_Body->setInterpolationWorldTransform( transform );
+  this->m_Body->setLinearVelocity( btVector3( 0, 0, 0 ) );
+  this->m_Body->setAngularVelocity( btVector3( 0, 0, 0 ) );
+  this->m_Body->activate( true );
+  this->m_State->setWorldTransform( transform );
+  this->m_Yaw = Ogre::Radian( 0 );
+  this->m_Pitch = Ogre::Radian( 0 );
+  this->m_Forward = this->m_Back = this->m_Left = this->m_Right = false;
+  this->m_ThrowableRequested = false;
+  this->m_InputEnabled = false;
+  this->m_World->updateSingleAabb( this->m_Body.get( ) );
+  this->update( );
+}
+
+// -------------------------------------------------------------------------
+void Player::
+setInputEnabled( bool enabled )
+{
+  this->m_InputEnabled = enabled;
+  this->m_Forward = this->m_Back = this->m_Left = this->m_Right = false;
+  this->m_ThrowableRequested = false;
+  if( !enabled && this->m_Body != nullptr )
+  {
+    const btVector3 velocity = this->m_Body->getLinearVelocity( );
+    this->m_Body->setLinearVelocity( btVector3( 0, velocity.y( ), 0 ) );
+  }
+}
+
+// -------------------------------------------------------------------------
 Ogre::Vector3 Player::
 getEyePosition( ) const
 {
@@ -137,6 +179,8 @@ consumeThrowableRequest( )
 bool Player::
 keyPressed( const OgreBites::KeyboardEvent& evt )
 {
+  if( !this->m_InputEnabled )
+    return( true );
   if( evt.keysym.sym == 'q' )
   {
     this->m_ThrowableRequested = true;
@@ -149,6 +193,8 @@ keyPressed( const OgreBites::KeyboardEvent& evt )
 bool Player::
 keyReleased( const OgreBites::KeyboardEvent& evt )
 {
+  if( !this->m_InputEnabled )
+    return( true );
   return( this->_setKey( evt.keysym.sym, false ) );
 }
 
@@ -156,6 +202,8 @@ keyReleased( const OgreBites::KeyboardEvent& evt )
 bool Player::
 mousePressed( const OgreBites::MouseButtonEvent& evt )
 {
+  if( !this->m_InputEnabled )
+    return( true );
   if( evt.button == OgreBites::BUTTON_LEFT )
   {
     this->m_ThrowableRequested = true;
@@ -168,6 +216,8 @@ mousePressed( const OgreBites::MouseButtonEvent& evt )
 bool Player::
 mouseMoved( const OgreBites::MouseMotionEvent& evt )
 {
+  if( !this->m_InputEnabled )
+    return( true );
   this->m_Yaw   -= Ogre::Degree( evt.xrel * this->m_MouseSensitivity );
   this->m_Pitch -= Ogre::Degree( evt.yrel * this->m_MouseSensitivity );
   this->m_Pitch = std::clamp(

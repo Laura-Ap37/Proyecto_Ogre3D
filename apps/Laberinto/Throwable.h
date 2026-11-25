@@ -21,6 +21,7 @@ public:
   bool throwFrom( const Ogre::Vector3& origin, const Ogre::Vector3& direction );
   void update( Ogre::Real dt );
   void deactivate( );
+  void reset( );
 
   State getState( ) const { return( this->m_State ); }
   const Ogre::Vector3& getPosition( ) const { return( this->m_Position ); }

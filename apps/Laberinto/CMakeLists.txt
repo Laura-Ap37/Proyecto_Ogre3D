@@ -12,7 +12,9 @@ add_executable(
   CooldownHud.cxx
   Enemy.cxx
   EnemyPresentation.cxx
+  Game.cxx
   Maze.cxx
+  LoseScreen.cxx
   Model.cxx
   Player.cxx
   Throwable.cxx
