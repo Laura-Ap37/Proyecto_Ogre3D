@@ -31,6 +31,16 @@ protected:
     Ogre::Real pixelWidth, Ogre::Real pixelHeight,
     const Ogre::ColourValue& colour
     );
+  void _drawTextCentered(
+    const Ogre::String& text, Ogre::Real centerX, Ogre::Real y,
+    Ogre::Real pixelWidth, Ogre::Real pixelHeight,
+    const Ogre::ColourValue& colour
+    );
+  void _button(
+    const Ogre::String& name, Ogre::Real y, const Ogre::String& label,
+    const Ogre::ColourValue& frame, const Ogre::ColourValue& fill,
+    const Ogre::ColourValue& text
+    );
 
 protected:
   Ogre::OverlayManager* m_Manager { nullptr };

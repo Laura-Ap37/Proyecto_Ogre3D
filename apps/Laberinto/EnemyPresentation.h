@@ -22,7 +22,7 @@ protected:
   const Maze* m_Maze { nullptr };
   Maze::Cell m_CurrentCell;
   Maze::Cell m_Destination;
-  Ogre::Real m_Speed { 1.8 };
+  Ogre::Real m_Speed { 2.0 };
   Ogre::Real m_Height { 0.8 };
 };
 

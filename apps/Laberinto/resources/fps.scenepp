@@ -6,9 +6,9 @@
   </userData>
 
   <environment>
-    <colourAmbient r="0.25" g="0.25" b="0.25"/>
+    <colourAmbient r="0.08" g="0.08" b="0.08"/>
     <fog mode="exp2" density="0.12">
-     <colour r="0.02" g="0.02" b="0.03"/>
+    <colour r="0.02" g="0.02" b="0.03"/>
     </fog>
   </environment>
 
@@ -21,9 +21,9 @@
 
       <node name="l1n">
       <light name="l1" type="point">
-       <colourDiffuse r="0.6" g="0.5" b="0.36"/>
-       <colourSpecular r="0.05" g="0.05" b="0.05"/>
-       <lightAttenuation range="7" constant="1" linear="0.7" quadratic="1.8"/>
+       <colourDiffuse r="0.7" g="0.6" b="0.45"/>
+       <colourSpecular r="0.03" g="0.03" b="0.03"/>
+       <lightAttenuation range="10" constant="1" linear="0.08" quadratic="0.08"/>
       </light>
       </node>
 

@@ -69,15 +69,8 @@ loadResources( )
 {
   this->enableShaderCache( );
   auto rgm = Ogre::ResourceGroupManager::getSingletonPtr( );
-  try
-  {
-    rgm->initialiseAllResourceGroups( );
-    rgm->loadResourceGroup( Ogre::RGN_DEFAULT );
-  }
-  catch( ... )
-  {
-    // Do nothing
-  }
+  rgm->initialiseAllResourceGroups( );
+  rgm->loadResourceGroup( Ogre::RGN_DEFAULT );
 }
 
 // -------------------------------------------------------------------------
@@ -309,7 +302,7 @@ _initSceneManager( )
   auto* root = this->getRoot( );
   auto mgr = root->createSceneManager( "DefaultSceneManager", "scnMgr" );
   mgr->addRenderQueueListener( this->getOverlaySystem( ) );
-  mgr->setAmbientLight( Ogre::ColourValue( 0.9, 0.9, 0.9 ) );
+  mgr->setAmbientLight( Ogre::ColourValue( 0.08, 0.08, 0.08 ) );
 
   // register our scene with the RTSS
   auto* shadergen = Ogre::RTShader::ShaderGenerator::getSingletonPtr( );
@@ -333,7 +326,7 @@ _configureCamera( )
 
   this->setWindowGrab( true );
   Ogre::Viewport* vp = this->getRenderWindow( )->addViewport( cam );
-  vp->setBackgroundColour( Ogre::ColourValue( 0.5f, 0.5f, 0.52f ) );
+  vp->setBackgroundColour( Ogre::ColourValue( 0.02f, 0.02f, 0.03f ) );
 }
 
 // -------------------------------------------------------------------------
@@ -371,7 +364,7 @@ _loadScene( )
   Ogre::Vector3 enemyPosition = this->m_Maze.cellToWorld( this->m_EnemySpawn );
   enemyPosition.y = enemyNode->getPosition( ).y;
   enemyNode->setPosition( enemyPosition );
-  this->m_EnemyPresentation.build( enemyNode, this->m_Maze, this->m_EnemySpawn, 1.8 );
+  this->m_EnemyPresentation.build( enemyNode, this->m_Maze, this->m_EnemySpawn, 2.0 );
 
   Ogre::SceneNode* throwableNode = mgr->getSceneNode( "ThrowablePlaceholder" );
   const Ogre::UserObjectBindings& enemyData = enemyNode->getUserObjectBindings( );
