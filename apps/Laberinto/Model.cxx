@@ -72,11 +72,15 @@ build( Ogre::SceneNode* root )
     if( node != nullptr )
     {
       // Configure each entity's physical properties
-      for( Ogre::MovableObject* obj: node->getAttachedObjects( ) )
-        this->_configure(
-          dynamic_cast< Ogre::Entity* >( obj ),
-          node->getUserObjectBindings( )
-          );
+      const Ogre::Any& physicsEnabled
+        = node->getUserObjectBindings( ).getUserAny( "physics_enabled" );
+      const bool* enabled = Ogre::any_cast< bool >( &physicsEnabled );
+      if( enabled == nullptr || *enabled )
+        for( Ogre::MovableObject* obj: node->getAttachedObjects( ) )
+          this->_configure(
+            dynamic_cast< Ogre::Entity* >( obj ),
+            node->getUserObjectBindings( )
+            );
 
       // Add children
       for( Ogre::Node* child: node->getChildren( ) )

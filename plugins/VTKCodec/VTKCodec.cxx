@@ -2,8 +2,8 @@
 // @author Leonardo Florez-Valencia (florez-l@javeriana.edu.co)
 // =========================================================================
 
-// Ogre plugin that registers VTK file formats as mesh codecs (Ogre 13+),
-// so that sceneMgr->createEntity("model.vtp") just works.
+// Ogre plugin that registers VTK and Wavefront OBJ files as mesh codecs
+// (Ogre 13+), so sceneMgr->createEntity("model.obj") just works.
 //
 // Load with plugins.cfg:   Plugin=Plugin_VtkCodec
 // or in code:              root->loadPlugin("Plugin_VtkCodec");
@@ -11,6 +11,9 @@
 #include <pujOgre/vtkPolyData2OgreMesh.h>
 #include <plugins/VTKCodec/Export.h>
 
+#include <chrono>
+#include <filesystem>
+#include <fstream>
 #include <vector>
 
 #include <OgrePlugin.h>
@@ -24,6 +27,12 @@
 #include <vtkPolyData.h>
 #include <vtkXMLPolyDataReader.h>
 #include <vtkPolyDataReader.h>
+#include <vtkOBJReader.h>
+#include <vtkTextureMapToSphere.h>
+#include <vtkVersionMacros.h>
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK( 9, 4, 0 )
+#include <vtkMemoryResourceStream.h>
+#endif
 
 namespace
 {
@@ -60,7 +69,60 @@ namespace
       const std::string data = input->getAsString( );
 
       vtkSmartPointer< vtkPolyData > polyData;
-      if( this->m_Type == "vtp" )
+      if( this->m_Type == "obj" )
+      {
+        auto reader = vtkSmartPointer< vtkOBJReader >::New( );
+#if VTK_VERSION_NUMBER >= VTK_VERSION_CHECK( 9, 4, 0 )
+        auto stream = vtkSmartPointer< vtkMemoryResourceStream >::New( );
+        stream->SetBuffer( data.data( ), data.size( ), true );
+        reader->SetStream( stream );
+#else
+        // VTK 9.1 reads OBJ only from a filename.
+        const auto tmp =
+          std::filesystem::temp_directory_path( ) /
+          (
+            "pujogre-"
+            +
+            std::to_string(
+              std::chrono::steady_clock::now( ).time_since_epoch( ).count( )
+              )
+            +
+            ".obj"
+            );
+        {
+          std::ofstream out(
+            tmp, std::ios::binary | std::ios::out | std::ios::noreplace
+            );
+          out.write(
+            data.data( ), static_cast< std::streamsize >( data.size( ) )
+            );
+          if( !out )
+            OGRE_EXCEPT(
+              Ogre::Exception::ERR_CANNOT_WRITE_TO_FILE,
+              "Could not write a temporary OBJ for '" + input->getName( ) + "'",
+              "pujOgreVTKCodec::decode"
+              );
+        }
+        struct TmpFile
+        {
+          std::filesystem::path Path;
+          ~TmpFile( )
+            {
+              std::error_code ec;
+              std::filesystem::remove( this->Path, ec );
+            }
+        } tmpFile{ tmp };
+        reader->SetFileName( tmp.string( ).c_str( ) );
+#endif
+        reader->Update( );
+
+        auto textureMap = vtkSmartPointer< vtkTextureMapToSphere >::New( );
+        textureMap->SetInputConnection( reader->GetOutputPort( ) );
+        textureMap->PreventSeamOn( );
+        textureMap->Update( );
+        polyData = vtkPolyData::SafeDownCast( textureMap->GetOutput( ) );
+      }
+      else if( this->m_Type == "vtp" )
       {
         auto reader = vtkSmartPointer< vtkXMLPolyDataReader >::New( );
         reader->ReadFromInputStringOn( );
@@ -112,7 +174,7 @@ namespace
 
     virtual void install( ) override
       {
-        for( const char* ext: { "vtp", "vtk" } )
+        for( const char* ext: { "vtp", "vtk", "obj" } )
         {
           auto* codec = new pujOgreVTKCodec( ext );
           Ogre::Codec::registerCodec( codec );

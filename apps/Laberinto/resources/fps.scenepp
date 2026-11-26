@@ -6,9 +6,9 @@
   </userData>
 
   <environment>
-    <colourAmbient r="0.25" g="0.25" b="0.25"/>
+    <colourAmbient r="0.08" g="0.08" b="0.08"/>
     <fog mode="exp2" density="0.12">
-     <colour r="0.02" g="0.02" b="0.03"/>
+    <colour r="0.02" g="0.02" b="0.03"/>
     </fog>
   </environment>
 
@@ -21,9 +21,9 @@
 
       <node name="l1n">
       <light name="l1" type="point">
-       <colourDiffuse r="0.6" g="0.5" b="0.36"/>
-       <colourSpecular r="0.05" g="0.05" b="0.05"/>
-       <lightAttenuation range="7" constant="1" linear="0.7" quadratic="1.8"/>
+       <colourDiffuse r="0.7" g="0.6" b="0.45"/>
+       <colourSpecular r="0.03" g="0.03" b="0.03"/>
+       <lightAttenuation range="10" constant="1" linear="0.08" quadratic="0.08"/>
       </light>
       </node>
 
@@ -62,6 +62,39 @@
       </plane>
       <userData>
         <property name="mass" type="float" data="0"/>
+      </userData>
+    </node>
+
+    <node name="MonsterPlaceholder">
+      <position x="0" y="1.42" z="2"/>
+      <scale x="0.1" y="0.1" z="0.1"/>
+      <entity name="MonsterPlaceholder" meshFile="bunny.obj"
+              material="MonsterPlaceholder" castShadows="true" visible="true"/>
+      <userData>
+        <property name="mass" type="float" data="0"/>
+        <property name="collider" type="string" data="box"/>
+        <property name="physics_enabled" type="bool" data="false"/>
+        <property name="stun_duration" type="float" data="30"/>
+        <property name="stun_radius" type="float" data="1.5"/>
+      </userData>
+    </node>
+
+    <node name="ThrowablePlaceholder">
+      <position x="0" y="1.25" z="0.8"/>
+      <scale x="0.22" y="0.22" z="0.22"/>
+      <parametricSurface name="ThrowablePlaceholder" type="ellipsoid"
+                         material="ThrowablePlaceholder" uResolution="16" vResolution="12"
+                         castShadows="true" visible="false">
+        <param name="xRadius" value="0.5"/>
+        <param name="yRadius" value="0.5"/>
+        <param name="zRadius" value="0.5"/>
+      </parametricSurface>
+      <userData>
+        <property name="physics_enabled" type="bool" data="false"/>
+        <property name="launch_speed" type="float" data="12"/>
+        <property name="lifetime" type="float" data="5"/>
+        <property name="collision_radius" type="float" data="0.15"/>
+        <property name="cooldown" type="float" data="60"/>
       </userData>
     </node>
 

@@ -9,6 +9,13 @@
 #include "Model.h"
 #include "Maze.h"
 #include "Player.h"
+#include "Enemy.h"
+#include "EnemyPresentation.h"
+#include "Throwable.h"
+#include "ThrowablePresentation.h"
+#include "CooldownHud.h"
+#include "Game.h"
+#include "LoseScreen.h"
 
 /**
  */
@@ -32,7 +39,9 @@ public:
 
   // Interactions
   virtual bool keyPressed( const OgreBites::KeyboardEvent& evt ) override;
-  //virtual bool mousePressed( const OgreBites::MouseButtonEvent& evt ) override;
+  virtual bool keyReleased( const OgreBites::KeyboardEvent& evt ) override;
+  virtual bool mousePressed( const OgreBites::MouseButtonEvent& evt ) override;
+  virtual bool mouseMoved( const OgreBites::MouseMotionEvent& evt ) override;
 
   // Animation
   virtual void frameRendered( const Ogre::FrameEvent& evt ) override;
@@ -45,6 +54,7 @@ protected:
   void _initSceneManager( );
   void _configureCamera( );
   void _loadScene( );
+  void _restartGame( );
   static void _bounds( Ogre::SceneNode* node, Ogre::AxisAlignedBox* box );
 
 protected:
@@ -52,6 +62,15 @@ protected:
   Model m_Model;
   Maze m_Maze;
   Player m_Player;  
+  Enemy m_Enemy;
+  EnemyPresentation m_EnemyPresentation;
+  Throwable m_Throwable;
+  ThrowablePresentation m_ThrowablePresentation;
+  CooldownHud m_CooldownHud;
+  Game m_Game;
+  LoseScreen m_LoseScreen;
+  Maze::Cell m_EnemySpawn;
+  bool m_EnablePlayerInputNextFrame { false };
 };
 
 #endif // __SolarSystem__Application__h__

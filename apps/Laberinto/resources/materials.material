@@ -44,14 +44,48 @@ material Wall
     {
         pass
         {
-            ambient  0.6 0.6 0.6
-            diffuse  0.6 0.6 0.6
-            specular 0.05 0.05 0.05 16
+            lighting on
+            ambient  0.2 0.05 0.05
+            diffuse  0.5 0.03 0.03
+            specular 0 0 0 1
 
             texture_unit
             {
-                texture wall.png
+                texture wall3.png
             }
+        }
+    }
+}
+
+material MonsterPlaceholder
+{
+    technique
+    {
+        pass
+        {
+            lighting off
+            ambient  1 1 1
+            diffuse  1 1 1
+            specular 0.2 0.2 0.2 16
+
+            texture_unit
+            {
+                texture oxido.png
+                colour_op replace
+            }
+        }
+    }
+}
+
+material ThrowablePlaceholder
+{
+    technique
+    {
+        pass
+        {
+            ambient  0.18 0.12 0.035
+            diffuse  0.85 0.55 0.12
+            specular 0.12 0.08 0.02 12
         }
     }
 }

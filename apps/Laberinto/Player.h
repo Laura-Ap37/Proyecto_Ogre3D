@@ -26,11 +26,18 @@ public:
 
   // Para el enemigo (pasos siguientes)
   Ogre::Vector3 getFeetPosition( ) const;
+  Ogre::Real getHeight( ) const { return( this->m_Height ); }
+  Ogre::Real getRadius( ) const { return( this->m_Radius ); }
+  Ogre::Vector3 getEyePosition( ) const;
   Ogre::Vector3 getLookDirection( ) const;
+  bool consumeThrowableRequest( );
+  void reset( const Ogre::Vector3& feet );
+  void setInputEnabled( bool enabled );
 
   // Interaccion
   virtual bool keyPressed( const OgreBites::KeyboardEvent& evt ) override;
   virtual bool keyReleased( const OgreBites::KeyboardEvent& evt ) override;
+  virtual bool mousePressed( const OgreBites::MouseButtonEvent& evt ) override;
   virtual bool mouseMoved( const OgreBites::MouseMotionEvent& evt ) override;
 
 protected:
@@ -46,12 +53,15 @@ protected:
   std::unique_ptr< btRigidBody > m_Body;
 
   Ogre::Real m_Height    { 1.7 };
+  Ogre::Real m_Radius    { 0.3 };
   Ogre::Real m_EyeHeight { 1.6 };
   Ogre::Real m_Speed     { 3.0 };
   Ogre::Real m_MouseSensitivity { 0.15 };
 
   Ogre::Radian m_Yaw { 0 }, m_Pitch { 0 };
   bool m_Forward { false }, m_Back { false }, m_Left { false }, m_Right { false };
+  bool m_ThrowableRequested { false };
+  bool m_InputEnabled { true };
 
   struct Tag { const void* entity; void* listener; };
   Tag m_Tag { nullptr, nullptr };
