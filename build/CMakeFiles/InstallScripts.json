@@ -1,0 +1,13 @@
+{
+	"InstallScripts" : 
+	[
+		"/home/velli/desarrollo/vsc/Proyecto_Ogre3D/build/cmake_install.cmake",
+		"/home/velli/desarrollo/vsc/Proyecto_Ogre3D/build/apps/cmake_install.cmake",
+		"/home/velli/desarrollo/vsc/Proyecto_Ogre3D/build/lib/pujOgre/cmake_install.cmake",
+		"/home/velli/desarrollo/vsc/Proyecto_Ogre3D/build/plugins/cmake_install.cmake",
+		"/home/velli/desarrollo/vsc/Proyecto_Ogre3D/build/apps/Laberinto/cmake_install.cmake",
+		"/home/velli/desarrollo/vsc/Proyecto_Ogre3D/build/plugins/DotPPScene/cmake_install.cmake",
+		"/home/velli/desarrollo/vsc/Proyecto_Ogre3D/build/plugins/VTKCodec/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

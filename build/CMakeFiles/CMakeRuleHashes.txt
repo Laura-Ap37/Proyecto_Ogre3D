@@ -1,0 +1,2 @@
+# Hashes of file build rules.
+8d8d28095117517015e63b10958592c3 apps/Laberinto/CMakeFiles/pujOgre_Laberinto_copy_resources

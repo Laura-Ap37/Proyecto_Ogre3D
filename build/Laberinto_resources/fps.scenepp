@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scene formatVersion="1.1">
+
+  <userData>
+    <property name="gravity" type="vector" data="0 -9.81 0"/>
+  </userData>
+
+  <environment>
+    <colourAmbient r="0.08" g="0.08" b="0.08"/>
+    <fog mode="exp2" density="0.12">
+    <colour r="0.02" g="0.02" b="0.03"/>
+    </fog>
+  </environment>
+
+  <nodes>
+    <node name="Player" >
+      <position x="0" y="0" z="1.7" />
+      <camera fov="0.785398163" name="Player" projectionType="perspective" >
+        <clipping far="10000" near="0.01" />
+      </camera>
+
+      <node name="l1n">
+      <light name="l1" type="point">
+       <colourDiffuse r="0.7" g="0.6" b="0.45"/>
+       <colourSpecular r="0.03" g="0.03" b="0.03"/>
+       <lightAttenuation range="10" constant="1" linear="0.08" quadratic="0.08"/>
+      </light>
+      </node>
+
+      <userData>
+        <property name="mass"       type="float" data="70"/>
+        <property name="radius"     type="float" data="0.3"/>
+        <property name="height"     type="float" data="1.7"/>
+        <property name="eye_height" type="float" data="1.6"/>
+        <property name="walk_speed" type="float" data="3"/>
+      </userData>
+    </node>
+
+    <node name="Ground">
+      <plane
+          name="GroundPlane" distance="0" width="42" height="42"
+          xSegments="21" ySegments="21" numTexCoordSets="1"
+          uTile="21" vTile="21" hasNormals="true" material="Ground"
+          >
+        <normal x="0" y="1" z="0"/>
+        <upVector x="0" y="0" z="-1"/>
+      </plane>
+      <userData>
+        <property name="mass" type="float" data="0"/>
+      </userData>
+    </node>
+
+    <node name="Ceiling">
+      <position x="0" y="3" z="0"/>
+      <plane
+          name="CeilingPlane" distance="0" width="42" height="42"
+          xSegments="21" ySegments="21" numTexCoordSets="1"
+          uTile="21" vTile="21" hasNormals="true" material="Ceiling"
+          >
+        <normal x="0" y="-1" z="0"/>
+        <upVector x="0" y="0" z="1"/>
+      </plane>
+      <userData>
+        <property name="mass" type="float" data="0"/>
+      </userData>
+    </node>
+
+    <node name="MonsterPlaceholder">
+      <position x="0" y="1.42" z="2"/>
+      <scale x="0.1" y="0.1" z="0.1"/>
+      <entity name="MonsterPlaceholder" meshFile="bunny.obj"
+              material="MonsterPlaceholder" castShadows="true" visible="true"/>
+      <userData>
+        <property name="mass" type="float" data="0"/>
+        <property name="collider" type="string" data="box"/>
+        <property name="physics_enabled" type="bool" data="false"/>
+        <property name="stun_duration" type="float" data="30"/>
+        <property name="stun_radius" type="float" data="1.5"/>
+      </userData>
+    </node>
+
+    <node name="ThrowablePlaceholder">
+      <position x="0" y="1.25" z="0.8"/>
+      <scale x="0.22" y="0.22" z="0.22"/>
+      <parametricSurface name="ThrowablePlaceholder" type="ellipsoid"
+                         material="ThrowablePlaceholder" uResolution="16" vResolution="12"
+                         castShadows="true" visible="false">
+        <param name="xRadius" value="0.5"/>
+        <param name="yRadius" value="0.5"/>
+        <param name="zRadius" value="0.5"/>
+      </parametricSurface>
+      <userData>
+        <property name="physics_enabled" type="bool" data="false"/>
+        <property name="launch_speed" type="float" data="12"/>
+        <property name="lifetime" type="float" data="5"/>
+        <property name="collision_radius" type="float" data="0.15"/>
+        <property name="cooldown" type="float" data="60"/>
+      </userData>
+    </node>
+
+  </nodes>
+</scene>
+
